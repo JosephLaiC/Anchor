@@ -1,146 +1,140 @@
-#!/usr/bin/perl
+# Input training TF name
+my $the_tf = $ARGV[0];
 
-## prepare training & test data
+# Paths for feature directory, chipseq directory, sample directory, and output directory
+my $path1 = '/state2/hyangl/TF_model/data/feature/';
+my $path2 = './data/chipseq/';
+my $path3 = './train/sample/';
+my $path4 = './train/train_test/G/';
 
-$the_tf=$ARGV[0]; # training TF
-$path1='/state2/hyangl/TF_model/data/feature/'; # path to the feature directory
-$path2='./data/chipseq/'; # path to the chipseq directory 
-$path3='./train/sample/'; # path to the sample directory 
-$path4='./train/train_test/G/'; # output directory PARAMETER 
+# Create output directory if it doesn't exist
+system("mkdir -p $path4");
 
-system "mkdir -p $path4";
 
-@tf_feature=glob ("${path1}tf_ru_max_top4_rank_largespace/$the_tf"); # PARAMETER: FG "xxx/$the_tf" HI "xxx/*"
+# Array for TF feature files
+my @tf_feature = glob("${path1}tf_ru_max_top4_rank_largespace/$the_tf");
 
-@cell_feature=("${path1}anchor_bam_DNAse_largespace/", # PARAMETER
+# Array for cell feature files
+my @cell_feature = (
+    "${path1}anchor_bam_DNAse_largespace/",
     "${path1}anchor_bam_DNAse_diff_largespace/",
     "${path1}anchor_bam_DNAse_max_min_largespace/",
     "${path1}anchor_bam_DNAse_max_min_diff_largespace/",
     "${path1}orange_rank_largespace/",
-    "${path1}orange_rank_diff_largespace/");
+    "${path1}orange_rank_diff_largespace/"
+);
 
-$rna_feature="${path1}top_20";  # 60519747 lines, including index
-
-
-#########
-#$the_tf=$ARGV[0]; # training TF
-#$path1='./data/'; # path to the feature directory
-#$path2='./data/chipseq/'; # path to the chipseq directory 
-#$path3='./train/sample/'; # path to the sample directory 
-#$path4='./train/train_test/G/'; # output directory PARAMETER 
-#
-#system "mkdir -p $path4";
-#
-#@tf_feature=glob ("${path1}seq_top4_rank_largespace/$the_tf"); # PARAMETER: FG "xxx/$the_tf" HI "xxx/*"
-#
-#@cell_feature=("${path1}anchor_bam_dnase_largespace/", # PARAMETER
-#    "${path1}anchor_bam_dnase_diff_largespace/",
-#    "${path1}anchor_bam_dnase_max_min_largespace/",
-#    "${path1}anchor_bam_dnase_max_min_diff_largespace/",
-#    "${path1}frequency_rank_largespace/",
-#    "${path1}frequency_rank_diff_largespace/");
-#
-#$rna_feature="${path1}top_20";  # 60519747 lines, including index
-########
-
-%chr_set1=(); # index for set1 and set2 chr
-open INDEX_SET1, "./data/index/ind_chr_set1.txt" or die;
-while($line=<INDEX_SET1>){
+# Hash for chromosome set1 index
+my %chr_set1 = ();
+open(INDEX_SET1, "./data/index/ind_chr_set1.txt") or die;
+while ($line = <INDEX_SET1>) {
     chomp $line;
-    $chr_set1{$line}=0;
+    $chr_set1{$line} = 0;
 }
-close INDEX_SET1;
+close(INDEX_SET1);
 
 
-system "mkdir -p ${path4}${the_tf}";
-@tmp=glob "${path2}${the_tf}*"; # collect names of all cell types for target tf
-open TMP, "$tmp[0]" or die;
-$line=<TMP>;
+# Process each cell type for the target TF
+system("mkdir -p ${path4}${the_tf}");
+my @tmp = glob("${path2}${the_tf}*"); # collect names of all cell types for target tf
+open(TMP, "$tmp[0]") or die;
+my $line = <TMP>;
 chomp $line;
-@list= split "\t", $line;
+my @list = split("\t", $line);
 shift @list;
 shift @list;
 shift @list;
-close TMP;
+close(TMP);
 
-foreach $cell (@list){
-    open SAMPLE, "${path3}${the_tf}/F.${the_tf}.${cell}.tab" or die; # a subset of all data; chr and start are the coordinates
-    %target=(); # if exists/defined target{$chr}{$start}
-    while($line=<SAMPLE>){
+foreach my $cell (@list) {
+    # ... (code for processing each cell type)
+}
+
+
+foreach my $cell (@list) {
+    # Read target data for the current cell type
+    open(SAMPLE, "${path3}${the_tf}/F.${the_tf}.${cell}.tab") or die;
+    my %target = ();
+    while ($line = <SAMPLE>) {
         chomp $line;
-        @tmp=split "\t", $line;
-        $chr=shift @tmp;
-        $start=shift @tmp;
-        shift @tmp;
-        $y=shift @tmp;
-        $target{$chr}{$start}=$y;
+        my @tmp = split("\t", $line);
+        my $chr = shift @tmp;
+        my $start = shift @tmp;
+        my $y = shift @tmp;
+        $target{$chr}{$start} = $y;
     }
-    close SAMPLE;
+    close(SAMPLE);
 
-    open INDEX, "$rna_feature" or die;
-    $num=0; # index for all feature files
-    foreach $file (@cell_feature){
-        $name="INPUT".$num;
-        open $name, "${file}${cell}" or die;
+    # Read feature files for the current cell type
+    open(INDEX, "$rna_feature") or die;
+    my $num = 0;
+    foreach my $file (@cell_feature) {
+        my $name = "INPUT" . $num;
+        open($name, "${file}${cell}") or die;
         $num++;
     }
-    foreach $file (@tf_feature){
-        $name="INPUT".$num;
-        open $name, "${file}" or die;
+    foreach my $file (@tf_feature) {
+        my $name = "INPUT" . $num;
+        open($name, "${file}") or die;
         $num++;
     }
 
-    open OUTPUT1, ">${path4}${the_tf}/${the_tf}.${cell}.set1" or die;
-    open OUTPUT2, ">${path4}${the_tf}/${the_tf}.${cell}.set2" or die;
-    while($line=<INDEX>){
+    # Write output files for set1 and set2
+    open(OUTPUT1, ">${path4}${the_tf}/${the_tf}.${cell}.set1") or die;
+    open(OUTPUT2, ">${path4}${the_tf}/${the_tf}.${cell}.set2") or die;
+    while ($line = <INDEX>) {
         chomp $line;
-        @rna=split "\t", $line;
-        $chr=shift @rna;
-        $start=shift @rna;
+        my @rna = split("\t", $line);
+        my $chr = shift @rna;
+        my $start = shift @rna;
         shift @rna;
-        if(defined $target{$chr}{$start}){ # if this line is target
-            if(exists $chr_set1{$chr}){ # save data as set 1 or set 2
-                $file="OUTPUT1";
-            }else{
-                $file="OUTPUT2"
+
+        # If the line is a target, write it to set1 or set2 based on the chromosome
+        if (defined $target{$chr}{$start}) {
+            if (exists $chr_set1{$chr}) {
+                print OUTPUT1 "$target{$chr}{$start}";
+            } else {
+                print OUTPUT2 "$target{$chr}{$start}";
             }
-            print $file "$target{$chr}{$start}"; # print y in the 1st column
-            $j=21;
-            foreach $x (@rna){ # print rna feature
-                print $file " $j:$x";
-                $j++;
+
+            # Print RNA features and other features
+            my $j = 21;
+            foreach my $x (@rna) {
+                print OUTPUT1 " $j:$x";
+              `$j++;
             }
-            $i=0;
-            while($i<$num){ # print all other features
-                $name="INPUT".$i;
-                $line=<$name>;
+            my $i = 0;
+            while ($i < $num) {
+                my $name = "INPUT" . $i;
+                my $line = <$name>;
                 chomp $line;
-                @tmp=split "\t",$line;
-                foreach $x (@tmp){
-                    print $file " $j:$x";
+                my @tmp = split("\t", $line);
+                foreach my $x (@tmp) {
+                    print OUTPUT1 " $j:$x";
                     $j++;
                 }
                 $i++;
             }
-            print $file "\n";
-        }else{ # if this line is not target, skip it
-            $i=0;
-            while($i<$num){
-                $name="INPUT".$i;
+            print OUTPUT1 "\n";
+        } else {
+            # Skip lines that are not targets
+            my $i = 0;
+            while ($i < $num) {
+                my $name = "INPUT" . $i;
                 <$name>;
                 $i++;
             }
         }
     }
-    close OUTPUT1;
-    close OUTPUT2;
-    close INDEX;
-    $i=0;
-    while($i<$num){
-        $name="INPUT".$i;
-        close $name;
+    close(OUTPUT1);
+    close(OUTPUT2);
+    close(INDEX);
+
+    # Close input feature files
+    my $i = 0;
+    while ($i < $num) {
+        my $name = "INPUT" . $i;
+        close($name);
         $i++;
     }
 }
-
-
